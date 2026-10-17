@@ -12,12 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Enter your email or username and password.';
     } else {
         try {
-            $stmt = db()->prepare('SELECT id, name, email, password_hash, role, status FROM users WHERE email = ? OR username = ? LIMIT 1');
+            $stmt = db()->prepare('SELECT id, name, email, password_hash, role, status, must_change_password FROM users WHERE email = ? OR username = ? LIMIT 1');
             $stmt->execute([$identifier, strtolower($identifier)]); $user = $stmt->fetch();
             if ($user && $user['status'] === 'active' && password_verify($password, $user['password_hash'])) {
                 session_regenerate_id(true);
                 $_SESSION['user_id'] = (int)$user['id']; $_SESSION['name'] = $user['name']; $_SESSION['role'] = $user['role'];
-                header('Location: index.php'); exit;
+                $_SESSION['must_change_password'] = (bool)$user['must_change_password'];
+                header('Location: ' . ($_SESSION['must_change_password'] ? 'profile.php?force_password=1' : 'index.php')); exit;
             }
             $error = 'Those sign-in details did not match an active account.';
         } catch (PDOException $e) { $error = 'ShuleLite is not connected yet. Import the database schema and try again.'; }

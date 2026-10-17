@@ -32,5 +32,12 @@ function verify_csrf(): void
     }
 }
 function signed_in(): bool { return !empty($_SESSION['user_id']); }
-function require_sign_in(): void { if (!signed_in()) { header('Location: login.php'); exit; } }
+function require_sign_in(): void
+{
+    if (!signed_in()) { header('Location: login.php'); exit; }
+    $page = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    if (!empty($_SESSION['must_change_password']) && !in_array($page, ['profile.php','logout.php'], true)) {
+        header('Location: profile.php?force_password=1'); exit;
+    }
+}
 function can_manage_schools(): bool { return in_array($_SESSION['role'] ?? '', ['system_admin', 'sub_admin'], true); }

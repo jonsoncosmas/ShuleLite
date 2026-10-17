@@ -17,7 +17,7 @@ if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($passwo
     fwrite(STDERR, "Enter a name, valid email, and password with at least 12 characters.\n");
     exit(1);
 }
-$stmt = db()->prepare("INSERT INTO users (name,email,password_hash,role) VALUES (?,?,?,'system_admin')");
+$stmt = db()->prepare("INSERT INTO users (name,email,password_hash,role,must_change_password) VALUES (?,?,?,'system_admin',TRUE)");
 try {
     $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT)]);
     fwrite(STDOUT, "System administrator created. Sign in at /login.php.\n");

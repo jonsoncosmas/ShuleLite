@@ -4,9 +4,10 @@ USE somaspac_shulelite2;
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(140) NOT NULL,
-    email VARCHAR(190) NOT NULL UNIQUE,
+    email VARCHAR(190) NULL UNIQUE,
     username VARCHAR(60) NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
     role ENUM('system_admin','sub_admin','admin','director','sub_director','headteacher','head_academic','assistant_academic','examination_officer','teacher','driver','hr','storekeeper') NOT NULL,
     status ENUM('active','disabled') NOT NULL DEFAULT 'active',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
