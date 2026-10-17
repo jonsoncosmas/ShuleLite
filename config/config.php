@@ -20,6 +20,16 @@ function db(): PDO
 }
 
 function e(?string $value): string { return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+function render_school_select(string $id, array $schools): string
+{
+    if (count($schools) === 1) {
+        $school = $schools[0];
+        return '<input type="hidden" name="school_id" value="' . (int)$school['id'] . '"><div class="school-context">School: <strong>' . e($school['name']) . '</strong></div>';
+    }
+    $html = '<div><label for="' . e($id) . '">School</label><select name="school_id" id="' . e($id) . '" required><option value="">Choose school</option>';
+    foreach ($schools as $school) $html .= '<option value="' . (int)$school['id'] . '">' . e($school['name']) . '</option>';
+    return $html . '</select></div>';
+}
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(32));
