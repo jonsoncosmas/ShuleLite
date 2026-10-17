@@ -35,6 +35,19 @@ function signed_in(): bool { return !empty($_SESSION['user_id']); }
 function require_sign_in(): void
 {
     if (!signed_in()) { header('Location: login.php'); exit; }
+    try {
+        $check = db()->prepare('SELECT status, must_change_password FROM users WHERE id = ?');
+        $check->execute([(int)$_SESSION['user_id']]);
+        $account = $check->fetch();
+        if (!$account || $account['status'] !== 'active') {
+            $_SESSION = [];
+            session_destroy();
+            header('Location: login.php?account=suspended'); exit;
+        }
+        $_SESSION['must_change_password'] = (bool)$account['must_change_password'];
+    } catch (PDOException $error) {
+        http_response_code(503); exit('Account access could not be verified. Please try again.');
+    }
     $page = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
     if (!empty($_SESSION['must_change_password']) && !in_array($page, ['profile.php','logout.php'], true)) {
         header('Location: profile.php?force_password=1'); exit;
