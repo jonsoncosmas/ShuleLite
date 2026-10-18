@@ -150,6 +150,7 @@ CREATE TABLE IF NOT EXISTS pupils (
     school_id BIGINT UNSIGNED NOT NULL,
     admission_number VARCHAR(60) NOT NULL,
     first_name VARCHAR(80) NOT NULL,
+    middle_name VARCHAR(80) NULL,
     last_name VARCHAR(80) NOT NULL,
     date_of_birth DATE NULL,
     class_level VARCHAR(80) NOT NULL,
@@ -195,6 +196,20 @@ CREATE TABLE IF NOT EXISTS pupil_results (
     CONSTRAINT fk_result_pupil FOREIGN KEY (pupil_id) REFERENCES pupils(id) ON DELETE CASCADE,
     CONSTRAINT fk_result_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
     CONSTRAINT fk_result_user FOREIGN KEY (entered_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS school_exams (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NOT NULL,
+    class_id BIGINT UNSIGNED NULL,
+    name VARCHAR(120) NOT NULL,
+    academic_year SMALLINT UNSIGNED NOT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_school_exam (school_id,name,academic_year,class_id),
+    CONSTRAINT fk_exam_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_exam_class FOREIGN KEY (class_id) REFERENCES school_classes(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_exam_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS pupil_attendance (
