@@ -184,6 +184,7 @@ CREATE TABLE IF NOT EXISTS pupil_results (
     class_level VARCHAR(80) NOT NULL,
     stream VARCHAR(80) NULL,
     subject VARCHAR(100) NOT NULL,
+    exam_name VARCHAR(120) NOT NULL,
     assessment VARCHAR(120) NOT NULL,
     academic_year SMALLINT UNSIGNED NOT NULL,
     score DECIMAL(6,2) NOT NULL,
