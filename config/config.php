@@ -64,3 +64,12 @@ function require_sign_in(): void
     }
 }
 function can_manage_schools(): bool { return in_array($_SESSION['role'] ?? '', ['system_admin', 'sub_admin'], true); }
+function pending_school_edit_request_count(): int
+{
+    static $count = null;
+    if ($count !== null) return $count;
+    if (!in_array($_SESSION['role'] ?? '', ['system_admin', 'sub_admin'], true)) return 0;
+    try { $count = (int)db()->query("SELECT COUNT(*) FROM school_edit_requests WHERE status='pending'")->fetchColumn(); }
+    catch (Throwable $error) { $count = 0; }
+    return $count;
+}
