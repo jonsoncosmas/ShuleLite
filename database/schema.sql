@@ -71,6 +71,31 @@ CREATE TABLE IF NOT EXISTS subscription_prices (
     CONSTRAINT fk_price_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS subscription_price_permissions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    granted_by BIGINT UNSIGNED NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP NULL DEFAULT NULL,
+    UNIQUE KEY uq_subscription_price_permission_user (user_id),
+    CONSTRAINT fk_subscription_price_permission_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_subscription_price_permission_grantor FOREIGN KEY (granted_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS school_subscription_discounts (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NOT NULL,
+    discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+    reason VARCHAR(255) NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_by BIGINT UNSIGNED NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_school_subscription_discount (school_id),
+    CONSTRAINT fk_school_subscription_discount_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_school_subscription_discount_user FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS school_classes (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
@@ -308,6 +333,11 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     price_id BIGINT UNSIGNED NOT NULL,
     starts_on DATE NOT NULL,
     ends_on DATE NOT NULL,
+    academic_year SMALLINT UNSIGNED NOT NULL,
+    pupil_count INT UNSIGNED NOT NULL DEFAULT 0,
+    unit_price DECIMAL(12,2) NOT NULL DEFAULT 0,
+    discount_percent DECIMAL(5,2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(14,2) NOT NULL DEFAULT 0,
     status ENUM('active','pending','expired','cancelled') NOT NULL DEFAULT 'pending',
     created_by BIGINT UNSIGNED NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
