@@ -171,6 +171,16 @@ CREATE TABLE IF NOT EXISTS learning_notes (
     CONSTRAINT fk_note_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS learning_note_terms (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    term_type ENUM('class','subject') NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_learning_note_term (term_type,name),
+    CONSTRAINT fk_learning_note_term_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     actor_id BIGINT UNSIGNED NULL,
