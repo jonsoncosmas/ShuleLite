@@ -39,6 +39,20 @@ CREATE TABLE IF NOT EXISTS school_edit_permissions (
     CONSTRAINT fk_school_edit_permission_grantor FOREIGN KEY (granted_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS school_setup_permissions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    granted_by BIGINT UNSIGNED NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    revoked_at TIMESTAMP NULL DEFAULT NULL,
+    UNIQUE KEY uq_school_setup_permission (school_id,user_id),
+    CONSTRAINT fk_school_setup_permission_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_school_setup_permission_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_school_setup_permission_grantor FOREIGN KEY (granted_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS school_edit_requests (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
@@ -96,26 +110,51 @@ CREATE TABLE IF NOT EXISTS school_subscription_discounts (
     CONSTRAINT fk_school_subscription_discount_user FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS academic_classes (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(80) NOT NULL UNIQUE,
+    created_by BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_academic_class_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS academic_class_subjects (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    class_id BIGINT UNSIGNED NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    created_by BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_academic_class_subject (class_id,name),
+    CONSTRAINT fk_academic_subject_class FOREIGN KEY (class_id) REFERENCES academic_classes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_academic_subject_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS school_classes (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id BIGINT UNSIGNED NOT NULL,
     name VARCHAR(80) NOT NULL,
+    core_class_id BIGINT UNSIGNED NULL,
     created_by BIGINT UNSIGNED NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_school_class (school_id,name),
+    UNIQUE KEY uq_school_core_class (school_id,core_class_id),
     CONSTRAINT fk_class_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
-    CONSTRAINT fk_class_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_class_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_school_class_core FOREIGN KEY (core_class_id) REFERENCES academic_classes(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS school_class_subjects (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     class_id BIGINT UNSIGNED NOT NULL,
     name VARCHAR(100) NOT NULL,
+    core_subject_id BIGINT UNSIGNED NULL,
     created_by BIGINT UNSIGNED NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_class_subject (class_id,name),
+    UNIQUE KEY uq_school_core_subject (class_id,core_subject_id),
     CONSTRAINT fk_class_subject_class FOREIGN KEY (class_id) REFERENCES school_classes(id) ON DELETE CASCADE,
-    CONSTRAINT fk_class_subject_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    CONSTRAINT fk_class_subject_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_school_class_core_subject FOREIGN KEY (core_subject_id) REFERENCES academic_class_subjects(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS school_streams (
@@ -159,6 +198,7 @@ CREATE TABLE IF NOT EXISTS learning_notes (
     title VARCHAR(180) NOT NULL,
     class_level VARCHAR(80) NOT NULL,
     subject VARCHAR(100) NULL,
+    topic VARCHAR(180) NULL,
     content MEDIUMTEXT NOT NULL,
     source VARCHAR(180) NULL,
     author_id BIGINT UNSIGNED NOT NULL,
@@ -179,6 +219,16 @@ CREATE TABLE IF NOT EXISTS learning_note_terms (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_learning_note_term (term_type,name),
     CONSTRAINT fk_learning_note_term_user FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS ai_provider_settings (
+    id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    provider VARCHAR(40) NOT NULL DEFAULT 'openrouter',
+    model VARCHAR(160) NOT NULL DEFAULT 'openai/gpt-4o-mini',
+    api_key_ciphertext TEXT NOT NULL,
+    updated_by BIGINT UNSIGNED NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ai_provider_settings_user FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS audit_logs (

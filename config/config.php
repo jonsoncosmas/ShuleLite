@@ -64,6 +64,25 @@ function require_sign_in(): void
     }
 }
 function can_manage_schools(): bool { return in_array($_SESSION['role'] ?? '', ['system_admin', 'sub_admin'], true); }
+function can_access_school_setup(?int $userId = null, ?string $role = null): bool
+{
+    static $cache = [];
+    $role ??= (string)($_SESSION['role'] ?? '');
+    $userId ??= (int)($_SESSION['user_id'] ?? 0);
+    if ($userId < 1 || in_array($role, ['system_admin','sub_admin'], true)) return false;
+    $key = $userId . ':' . $role;
+    if (array_key_exists($key, $cache)) return $cache[$key];
+    try {
+        if (in_array($role, ['headteacher','director'], true)) {
+            $q = db()->prepare('SELECT 1 FROM school_memberships WHERE user_id=? LIMIT 1');
+            $q->execute([$userId]);
+        } elseif ($role === 'admin') {
+            $q = db()->prepare('SELECT 1 FROM school_memberships m JOIN school_setup_permissions p ON p.school_id=m.school_id AND p.user_id=m.user_id WHERE m.user_id=? AND p.active=1 LIMIT 1');
+            $q->execute([$userId]);
+        } else return $cache[$key] = false;
+        return $cache[$key] = (bool)$q->fetchColumn();
+    } catch (Throwable $error) { return $cache[$key] = false; }
+}
 function pending_school_edit_request_count(): int
 {
     static $count = null;
