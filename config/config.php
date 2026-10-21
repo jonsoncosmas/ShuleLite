@@ -126,15 +126,37 @@ function send_director_password_sms(string $phone, string $name, string $passwor
     $curl = curl_init($endpoint);
     curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>20,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CUSTOMREQUEST=>'POST',CURLOPT_POSTFIELDS=>$payload,CURLOPT_HTTPHEADER=>['Authorization: '.(str_starts_with($token,'Basic ')?$token:'Basic '.$token),'Content-Type: application/json','Accept: application/json']]);
     $body=curl_exec($curl);$curlError=curl_error($curl);$status=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE);$errno=curl_errno($curl);curl_close($curl);
-    $decoded=is_string($body)?json_decode($body,true):null;$providerSuccess=is_array($decoded)?($decoded['success']??null):null;$accepted=$errno===0&&$status>=200&&$status<300&&$providerSuccess===true;
-    $messageId=is_array($decoded)?(string)($decoded['message_id']??$decoded['data']['message_id']??''):'';
+    $decoded=is_string($body)?json_decode($body,true):null;
+    $providerMessage=is_array($decoded)&&!empty($decoded['messages'][0])&&is_array($decoded['messages'][0])?$decoded['messages'][0]:[];
+    $providerDelivery=is_array($providerMessage['status']??null)?$providerMessage['status']:[];
+    $providerSuccess=is_array($decoded)?($decoded['success']??null):null;
+    $messageId=is_array($decoded)?(string)($decoded['message_id']??$decoded['data']['message_id']??$providerMessage['messageId']??$providerMessage['message_id']??''):'';
+    $accepted=$errno===0&&$status>=200&&$status<300&&($providerSuccess===true||$messageId!=='');
     if($errno!==0)$diagnostic='cURL error '.$errno.': '.$curlError;
     elseif($status<200||$status>=300)$diagnostic='Provider returned HTTP '.$status.'.';
     elseif($providerSuccess!==true){$providerMessage=is_array($decoded)?($decoded['message']??$decoded['error']??'Provider response did not confirm success.'):'';$diagnostic=is_scalar($providerMessage)?(string)$providerMessage:'Provider response did not confirm success.';if($diagnostic==='')$diagnostic='Provider returned a non-JSON response instead of success confirmation.';}
-    else{$providerMessage=$decoded['message']??'Provider accepted the message.';$diagnostic=is_scalar($providerMessage)?(string)$providerMessage:'Provider accepted the message.';}
+    else{$providerText=$providerDelivery['description']??($providerDelivery['name']??($decoded['message']??'Provider accepted the message.'));$diagnostic=is_scalar($providerText)?(string)$providerText:'Provider accepted the message.';}
     $diagnostic=trim(preg_replace('/\s+/',' ',str_replace([$password,$payload],['[redacted]','[request redacted]'],$diagnostic))??'');
     if(is_string($body)&&$body!==''&&$providerSuccess!==true){$bodyText=trim(preg_replace('/\s+/',' ',str_replace([$password,$payload],['[redacted]','[request redacted]'],$body))??'');if($bodyText!=='')$diagnostic=substr($diagnostic.' Provider response: '.$bodyText,0,1200);}
     return ['accepted'=>$accepted,'endpoint'=>$endpoint,'http_status'=>$status?:null,'message_id'=>$messageId?:null,'recipient'=>$to,'diagnostic'=>substr($diagnostic,0,1200)];
+}
+
+function director_sms_provider_message(?string $diagnostic): string
+{
+    $diagnostic=trim((string)$diagnostic);
+    if($diagnostic==='')return 'No provider message returned.';
+    $marker='Provider response:';
+    $position=strpos($diagnostic,$marker);
+    if($position!==false){
+        $response=json_decode(trim(substr($diagnostic,$position+strlen($marker))),true);
+        if(is_array($response)){
+            $message=$response['messages'][0]??[];
+            $status=is_array($message)?($message['status']??[]):[];
+            if(is_array($status)&&!empty($status['description']))return (string)$status['description'];
+            if(is_array($status)&&!empty($status['name']))return (string)$status['name'];
+        }
+    }
+    return $diagnostic;
 }
 
 function check_director_sms_delivery(string $messageId): array
@@ -152,7 +174,8 @@ function check_director_sms_delivery(string $messageId): array
     $report=$data;
     if(is_array($report)&&isset($report['data']))$report=$report['data'];
     if(is_array($report)&&array_is_list($report))$report=$report[0]??[];
-    $raw=is_array($report)?($report['status']??$report['delivery_status']??$report['deliveryStatus']??$report['state']??null):null;
+    $raw=is_array($report)?($report['delivery_status']??$report['deliveryStatus']??$report['state']??$report['status']??null):null;
+    if(is_array($raw))$raw=$raw['name']??$raw['groupName']??$raw['description']??null;
     if(!is_scalar($raw)||trim((string)$raw)==='')return ['ok'=>false,'endpoint'=>$endpoint,'http_status'=>$status,'delivery_status'=>null,'diagnostic'=>'Provider returned no delivery status for this message.'];
     $delivery=strtolower(trim((string)$raw));
     return ['ok'=>true,'endpoint'=>$endpoint,'http_status'=>$status,'delivery_status'=>substr($delivery,0,40),'diagnostic'=>'Provider delivery status: '.substr((string)$raw,0,160).'.'];

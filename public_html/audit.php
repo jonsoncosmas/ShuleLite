@@ -36,16 +36,7 @@ if(($_GET['async']??'')==='1'){
 </head>
 <body>
 <div class="app-shell">
-<aside class="sidebar" id="sidebar">
-<a class="brand" href="index.php"><span class="brand-mark">S</span><span>shule<span class="brand-lite">lite</span></span></a>
-<div class="workspace-label">SYSTEM</div>
-<nav class="side-nav" aria-label="System navigation">
-<a class="nav-item" href="index.php"><span class="nav-icon" aria-hidden="true">⌂</span>Overview</a>
-<a class="nav-item" href="team.php"><span class="nav-icon" aria-hidden="true">♧</span>Team</a>
-<a class="nav-item active" href="audit.php" aria-current="page"><span class="nav-icon" aria-hidden="true">◷</span>Audit log</a>
-<?php if(in_array($_SESSION['role']??'', ['system_admin','sub_admin'],true)):?><a class="nav-item" href="requests.php"><span class="nav-icon" aria-hidden="true">✉</span>Requests<?php $requestBadgeCount=pending_school_edit_request_count();if($requestBadgeCount):?><span class="side-nav-count"><?=$requestBadgeCount>99?'99+':$requestBadgeCount?></span><?php endif;?></a><?php endif;?><a class="nav-item<?=in_array(basename($_SERVER['PHP_SELF']),['notes.php','ai_questions.php'],true)?' active':''?>" href="notes.php"<?=basename($_SERVER['PHP_SELF'])==='notes.php'?' aria-current="page"':''?>><span class="nav-icon" aria-hidden="true">▧</span>Learning Materials</a></nav>
-<div class="sidebar-bottom"><a class="nav-item" href="profile.php"><span class="nav-icon" aria-hidden="true">◉</span>My account</a><a class="nav-item" href="logout.php"><span class="nav-icon" aria-hidden="true">↪</span>Sign out</a></div>
-</aside>
+<?php require __DIR__ . "/sidebar.php"; ?>
 <main class="main-area">
 <header class="topbar"><button class="icon-button menu-toggle" data-menu aria-label="Open navigation" aria-expanded="false">☰</button><div class="crumb">System <span>/</span> Audit log</div><?php if(in_array($_SESSION['role']??'', ['system_admin','sub_admin'],true)):$pendingEditCount=pending_school_edit_request_count();?><a class="notification-bell" href="requests.php#requested" aria-label="<?=$pendingEditCount?> pending edit requests" title="<?=$pendingEditCount?> pending edit requests"><span aria-hidden="true">🔔</span><?php if($pendingEditCount):?><span class="notification-badge"><?=$pendingEditCount>99?'99+':$pendingEditCount?></span><?php endif;?></a><?php endif;?><div class="top-actions"><span class="role-chip"><?=e(str_replace('_',' ',$_SESSION['role']))?></span><div class="user-name"><?=e($_SESSION['name'])?></div></div></header>
 <div class="page-content audit-content">
