@@ -93,3 +93,7 @@ div[data-director-phone][hidden]{display:none!important}
 .delete-confirm-card .dialog-actions{justify-content:center;margin-top:22px}
 @media(max-width:640px){.central-dialog-top,#central-note-view,.central-note-edit-form{padding-left:17px;padding-right:17px}.central-note-dialog{border-radius:15px}.central-delete-dialog .dialog-actions{flex-direction:column-reverse}.central-delete-dialog .dialog-actions .button{width:100%}}
 .central-note-edit-form[hidden]{display:none}
+
+.new-director-fields{grid-column:1/-1;padding:20px;border:1px solid color-mix(in srgb,var(--primary) 22%,var(--border));border-radius:12px;background:color-mix(in srgb,var(--primary) 4%,var(--surface))}.new-director-fields>.muted{margin:6px 0 16px}.director-credentials{margin:0 0 18px;line-height:1.8}.director-credentials .button{margin-left:8px}
+
+.status-pill{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700}.status-pill.accepted{color:var(--success);background:color-mix(in srgb,var(--success) 10%,var(--surface))}.status-pill.failed{color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,var(--surface))}

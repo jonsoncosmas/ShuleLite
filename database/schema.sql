@@ -231,6 +231,28 @@ CREATE TABLE IF NOT EXISTS ai_provider_settings (
     CONSTRAINT fk_ai_provider_settings_user FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS sms_delivery_logs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NULL,
+    director_user_id BIGINT UNSIGNED NULL,
+    actor_id BIGINT UNSIGNED NULL,
+    recipient VARCHAR(20) NOT NULL,
+    endpoint VARCHAR(500) NOT NULL,
+    http_status SMALLINT UNSIGNED NULL,
+    status ENUM('accepted','failed') NOT NULL,
+    provider_message_id VARCHAR(190) NULL,
+    delivery_status VARCHAR(40) NULL,
+    status_checked_at TIMESTAMP NULL,
+    status_check_diagnostic TEXT NULL,
+    diagnostic TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_sms_delivery_status_created (status,created_at),
+    KEY idx_sms_delivery_actor_created (actor_id,created_at),
+    CONSTRAINT fk_sms_delivery_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE SET NULL,
+    CONSTRAINT fk_sms_delivery_director FOREIGN KEY (director_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_sms_delivery_actor FOREIGN KEY (actor_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     actor_id BIGINT UNSIGNED NULL,

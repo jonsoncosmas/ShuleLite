@@ -6,6 +6,16 @@ const DB_NAME = 'somaspac_shulelite2';
 const DB_USER = 'root';
 const DB_PASS = '';
 
+function shule_sms_basic_auth(): string
+{
+    $environment = trim((string) getenv('SHULELITE_SMS_BASIC_AUTH'));
+    if ($environment !== '') return $environment;
+    $localFile = __DIR__ . '/sms.local.php';
+    if (!is_file($localFile)) return '';
+    $settings = require $localFile;
+    return is_array($settings) ? trim((string) ($settings['basic_auth'] ?? '')) : '';
+}
+
 function db(): PDO
 {
     static $pdo;
@@ -91,4 +101,59 @@ function pending_school_edit_request_count(): int
     try { $count = (int)db()->query("SELECT COUNT(*) FROM school_edit_requests WHERE status='pending'")->fetchColumn(); }
     catch (Throwable $error) { $count = 0; }
     return $count;
+}
+
+function director_sms_phone(string $phone): ?string
+{
+    $digits = preg_replace('/\D+/', '', $phone) ?? '';
+    if (str_starts_with($digits, '0')) $digits = '255' . substr($digits, 1);
+    elseif (!str_starts_with($digits, '255')) $digits = '255' . $digits;
+    if (strlen($digits) < 8 || strlen($digits) > 15) return null;
+    return $digits;
+}
+
+function send_director_password_sms(string $phone, string $name, string $password): array
+{
+    $endpoint = 'https://messaging-service.co.tz/api/sms/v1/text/single';
+    $token = shule_sms_basic_auth();
+    $to = director_sms_phone($phone);
+    if ($token === '') return ['accepted'=>false,'endpoint'=>$endpoint,'http_status'=>null,'message_id'=>null,'diagnostic'=>'SMS authorization is not configured.'];
+    if (!$to) return ['accepted'=>false,'endpoint'=>$endpoint,'http_status'=>null,'message_id'=>null,'diagnostic'=>'The phone number could not be formatted as a Tanzania mobile number.'];
+    if (!function_exists('curl_init')) return ['accepted'=>false,'endpoint'=>$endpoint,'http_status'=>null,'message_id'=>null,'diagnostic'=>'PHP cURL is not enabled.'];
+    $sender = trim((string) getenv('SHULELITE_SMS_SENDER')) ?: 'Elimika';
+    $payload = json_encode(['from'=>$sender,'to'=>$to,'text'=>"Hello {$name}, your ShuleLite temporary password is {$password}. Sign in and change it immediately.",'reference'=>'director-'.bin2hex(random_bytes(6))]);
+    if ($payload === false) return ['accepted'=>false,'endpoint'=>$endpoint,'http_status'=>null,'message_id'=>null,'diagnostic'=>'The SMS request could not be encoded as JSON.'];
+    $curl = curl_init($endpoint);
+    curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>20,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CUSTOMREQUEST=>'POST',CURLOPT_POSTFIELDS=>$payload,CURLOPT_HTTPHEADER=>['Authorization: '.(str_starts_with($token,'Basic ')?$token:'Basic '.$token),'Content-Type: application/json','Accept: application/json']]);
+    $body=curl_exec($curl);$curlError=curl_error($curl);$status=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE);$errno=curl_errno($curl);curl_close($curl);
+    $decoded=is_string($body)?json_decode($body,true):null;$providerSuccess=is_array($decoded)?($decoded['success']??null):null;$accepted=$errno===0&&$status>=200&&$status<300&&$providerSuccess===true;
+    $messageId=is_array($decoded)?(string)($decoded['message_id']??$decoded['data']['message_id']??''):'';
+    if($errno!==0)$diagnostic='cURL error '.$errno.': '.$curlError;
+    elseif($status<200||$status>=300)$diagnostic='Provider returned HTTP '.$status.'.';
+    elseif($providerSuccess!==true){$providerMessage=is_array($decoded)?($decoded['message']??$decoded['error']??'Provider response did not confirm success.'):'';$diagnostic=is_scalar($providerMessage)?(string)$providerMessage:'Provider response did not confirm success.';if($diagnostic==='')$diagnostic='Provider returned a non-JSON response instead of success confirmation.';}
+    else{$providerMessage=$decoded['message']??'Provider accepted the message.';$diagnostic=is_scalar($providerMessage)?(string)$providerMessage:'Provider accepted the message.';}
+    $diagnostic=trim(preg_replace('/\s+/',' ',str_replace([$password,$payload],['[redacted]','[request redacted]'],$diagnostic))??'');
+    if(is_string($body)&&$body!==''&&$providerSuccess!==true){$bodyText=trim(preg_replace('/\s+/',' ',str_replace([$password,$payload],['[redacted]','[request redacted]'],$body))??'');if($bodyText!=='')$diagnostic=substr($diagnostic.' Provider response: '.$bodyText,0,1200);}
+    return ['accepted'=>$accepted,'endpoint'=>$endpoint,'http_status'=>$status?:null,'message_id'=>$messageId?:null,'recipient'=>$to,'diagnostic'=>substr($diagnostic,0,1200)];
+}
+
+function check_director_sms_delivery(string $messageId): array
+{
+    $endpoint = 'https://messaging-service.co.tz/api/sms/v1/reports?messageId=' . rawurlencode($messageId);
+    $token = shule_sms_basic_auth();
+    if ($token === '') return ['ok'=>false,'endpoint'=>$endpoint,'http_status'=>null,'delivery_status'=>null,'diagnostic'=>'SMS authorization is not configured.'];
+    if (!function_exists('curl_init')) return ['ok'=>false,'endpoint'=>$endpoint,'http_status'=>null,'delivery_status'=>null,'diagnostic'=>'PHP cURL is not enabled.'];
+    $curl = curl_init($endpoint);
+    curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_TIMEOUT=>20,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_HTTPGET=>true,CURLOPT_HTTPHEADER=>['Authorization: '.(str_starts_with($token,'Basic ')?$token:'Basic '.$token),'Accept: application/json']]);
+    $body=curl_exec($curl);$curlError=curl_error($curl);$status=(int)curl_getinfo($curl,CURLINFO_HTTP_CODE);$errno=curl_errno($curl);curl_close($curl);
+    $data=is_string($body)?json_decode($body,true):null;
+    if($errno!==0)return ['ok'=>false,'endpoint'=>$endpoint,'http_status'=>$status?:null,'delivery_status'=>null,'diagnostic'=>'Status lookup cURL error '.$errno.': '.$curlError];
+    if($status<200||$status>=300)return ['ok'=>false,'endpoint'=>$endpoint,'http_status'=>$status?:null,'delivery_status'=>null,'diagnostic'=>'Status provider returned HTTP '.$status.'.'];
+    $report=$data;
+    if(is_array($report)&&isset($report['data']))$report=$report['data'];
+    if(is_array($report)&&array_is_list($report))$report=$report[0]??[];
+    $raw=is_array($report)?($report['status']??$report['delivery_status']??$report['deliveryStatus']??$report['state']??null):null;
+    if(!is_scalar($raw)||trim((string)$raw)==='')return ['ok'=>false,'endpoint'=>$endpoint,'http_status'=>$status,'delivery_status'=>null,'diagnostic'=>'Provider returned no delivery status for this message.'];
+    $delivery=strtolower(trim((string)$raw));
+    return ['ok'=>true,'endpoint'=>$endpoint,'http_status'=>$status,'delivery_status'=>substr($delivery,0,40),'diagnostic'=>'Provider delivery status: '.substr((string)$raw,0,160).'.'];
 }
