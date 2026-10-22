@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:somaspace:shulelite:somatokeo:academic-results:1",
+  "title": "Shule Lite published academic results exchange v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "institution_reference", "academic_year", "term", "exported_at", "results"],
+  "properties": {
+    "contract_version": {"const": "1.0"},
+    "institution_reference": {"type": "string", "minLength": 1, "maxLength": 120},
+    "academic_year": {"type": "integer", "minimum": 2000, "maximum": 2100},
+    "term": {"type": "string", "maxLength": 40},
+    "exported_at": {"type": "string", "format": "date-time"},
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["learner_reference", "exam_reference", "subject", "assessment", "score", "maximum_score"],
+        "properties": {
+          "learner_reference": {"type": "string", "minLength": 1, "maxLength": 120},
+          "exam_reference": {"type": "string", "minLength": 1, "maxLength": 180},
+          "subject": {"type": "string", "minLength": 1, "maxLength": 100},
+          "assessment": {"type": "string", "minLength": 1, "maxLength": 120},
+          "score": {"type": "number", "minimum": 0},
+          "maximum_score": {"type": "number", "exclusiveMinimum": 0}
+        }
+      }
+    }
+  }
+}

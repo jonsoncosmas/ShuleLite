@@ -1,0 +1,63 @@
+CREATE TABLE IF NOT EXISTS holiday_packages (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NOT NULL,
+    class_id BIGINT UNSIGNED NOT NULL,
+    subject_id BIGINT UNSIGNED NOT NULL,
+    title VARCHAR(180) NOT NULL,
+    holiday_period VARCHAR(100) NOT NULL,
+    introduction TEXT NULL,
+    available_from DATE NULL,
+    available_until DATE NULL,
+    status ENUM('draft','submitted','approved','returned','published','archived') NOT NULL DEFAULT 'draft',
+    created_by BIGINT UNSIGNED NOT NULL,
+    reviewed_by BIGINT UNSIGNED NULL,
+    reviewed_at TIMESTAMP NULL,
+    review_feedback TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_holiday_package_scope (id,school_id),
+    KEY idx_holiday_package_class (school_id,class_id,status,available_from,available_until),
+    CONSTRAINT fk_holiday_package_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_holiday_package_class FOREIGN KEY (class_id) REFERENCES school_classes(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_holiday_package_subject FOREIGN KEY (subject_id) REFERENCES school_class_subjects(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_holiday_package_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_holiday_package_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS holiday_package_items (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    package_id BIGINT UNSIGNED NOT NULL,
+    school_id BIGINT UNSIGNED NOT NULL,
+    sequence_no SMALLINT UNSIGNED NOT NULL,
+    item_type ENUM('material','exercise','activity') NOT NULL,
+    title VARCHAR(180) NOT NULL,
+    instructions TEXT NULL,
+    content MEDIUMTEXT NULL,
+    learning_note_id BIGINT UNSIGNED NULL,
+    question_id BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_holiday_item_order (package_id,sequence_no),
+    KEY idx_holiday_item_package (school_id,package_id),
+    CONSTRAINT fk_holiday_item_package FOREIGN KEY (package_id,school_id) REFERENCES holiday_packages(id,school_id) ON DELETE CASCADE,
+    CONSTRAINT fk_holiday_item_note FOREIGN KEY (learning_note_id) REFERENCES learning_notes(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_holiday_item_question FOREIGN KEY (question_id) REFERENCES question_bank(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS holiday_package_progress (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    package_id BIGINT UNSIGNED NOT NULL,
+    school_id BIGINT UNSIGNED NOT NULL,
+    pupil_id BIGINT UNSIGNED NOT NULL,
+    status ENUM('assigned','in_progress','completed') NOT NULL DEFAULT 'assigned',
+    pupil_response MEDIUMTEXT NULL,
+    teacher_feedback TEXT NULL,
+    feedback_by BIGINT UNSIGNED NULL,
+    feedback_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_holiday_package_progress (package_id,pupil_id),
+    KEY idx_holiday_progress_pupil (school_id,pupil_id,status),
+    CONSTRAINT fk_holiday_progress_package FOREIGN KEY (package_id,school_id) REFERENCES holiday_packages(id,school_id) ON DELETE CASCADE,
+    CONSTRAINT fk_holiday_progress_pupil FOREIGN KEY (pupil_id,school_id) REFERENCES pupils(id,school_id) ON DELETE CASCADE,
+    CONSTRAINT fk_holiday_progress_feedback FOREIGN KEY (feedback_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;

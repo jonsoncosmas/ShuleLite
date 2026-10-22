@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS employee_profiles (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id BIGINT UNSIGNED NOT NULL,
+    user_id BIGINT UNSIGNED NOT NULL,
+    employee_number VARCHAR(60) NULL,
+    job_title VARCHAR(140) NULL,
+    department VARCHAR(120) NULL,
+    employment_type ENUM('full_time','part_time','casual','volunteer','contract') NULL,
+    created_by BIGINT UNSIGNED NOT NULL,
+    updated_by BIGINT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_employee_profile_user (school_id,user_id),
+    UNIQUE KEY uq_employee_number_school (school_id,employee_number),
+    KEY idx_employee_profile_department (school_id,department),
+    CONSTRAINT fk_employee_profile_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_employee_profile_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_employee_profile_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_employee_profile_updater FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE RESTRICT
+) ENGINE=InnoDB;

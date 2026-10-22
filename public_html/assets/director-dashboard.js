@@ -1,0 +1,6 @@
+(()=>{
+ const root=document.querySelector('[data-director-dashboard]');if(!root)return;const cash=new Intl.NumberFormat('en-KE',{style:'currency',currency:'KES'});
+ const set=(key,value)=>{const e=root.querySelector(`[data-director-metric="${key}"]`);if(e)e.textContent=String(value)};
+ const fail=(message)=>{for(const k of ['pupils','new-pupils','staff','attendance','marked','payments','arrears','lessons','approvals','stock'])set(k,'—');const p=document.createElement('p');p.className='notice error';p.setAttribute('role','alert');p.textContent=message;root.append(p)};
+ const load=async()=>{try{const r=await fetch(`${root.dataset.api}?school_id=${encodeURIComponent(root.dataset.school)}`,{credentials:'same-origin',headers:{Accept:'application/json'}}),j=await r.json();if(!r.ok||!j.ok)throw new Error(j.message||'Director dashboard could not be loaded.');const d=j.data;set('pupils',d.active_pupils);set('new-pupils',d.new_pupils_30d);set('staff',d.active_staff);set('attendance',d.attendance_rate===null?'No data':`${d.attendance_rate}%`);set('marked',d.attendance_marked);set('payments',cash.format(d.month_net_payments));set('arrears',cash.format(d.outstanding_fees));set('lessons',d.confirmed_lessons_30d);set('approvals',d.pending_approvals);set('stock',d.low_stock_items)}catch(e){fail(e.message)}};load();
+})();
