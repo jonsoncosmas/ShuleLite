@@ -720,3 +720,15 @@ At each phase end, update the status and record checks actually executed. Do not
 - **Verification:** PHP syntax passed for all 91 PHP files under `public_html` and `bin`; JavaScript syntax passed for all 37 assets; the inline `dev.html` script and SomaTokeo schema JSON parsed successfully. No SMS worker was run, no live message was sent, and no configured school database was written. The canonical schema imported into a disposable database and `20261205_school_sms_templates.sql` applied successfully; that database was dropped. Provider concurrency/status behavior and browser accessibility/performance remain release gates. `config/config.php` was not modified; SomaBus remains excluded.
 - **SMS configuration:** added `school_sms_templates` migration and canonical schema definition, an audited leadership-only settings API/page, and a paginated delivery view. Template text is plain static copy with no variable placeholders; defaults remain available, reset is supported, and queued messages retain their saved body.
 - **API:** added `public_html/api/school_sms_templates.php` (`GET templates`, `GET deliveries`, `POST save/reset`) with school membership, leadership role, CSRF, audit, and bounded pagination checks.
+## Current correction — director school access
+
+- **Fixed:** the director dashboard now recognizes legacy schools created by the signed-in, active director when their membership row is missing. It restores a manager-scoped membership once, writes an audit event, then loads dashboard data through the normal school-membership path.
+- **Safety:** restoration is limited to schools whose schools.created_by matches that director account; it does not link schools created by other users. config/config.php and the configured database were not changed.
+- **Verification:** php -l public_html/index.php and the dev.html inline JavaScript syntax check passed. Database-backed and authenticated browser checks remain pending; the Director QA checklist now covers the legacy-link case.
+
+## Current correction — core class and subject catalog
+
+- **Changed:** System Admins and Sub Admins can rename core classes and subjects and remove them with an × control on the Academics catalog. The existing page-level and server-side role gate remains in force; operations are asynchronous and CSRF-protected.
+- **Data handling:** edits are audited and duplicate names are rejected by existing unique constraints. Removing a core item clears only school-to-core mapping references via the existing ON DELETE SET NULL relationships; school-local class/subject names and operational records remain. Removing a core class also removes its catalog subjects through the existing catalog cascade.
+- **Checklist:** System Admin and Sub Admin cases now include rename/remove, authorization, audit, duplicate, mapping, preservation, and async UI checks in public_html/dev.html.
+- **Verification:** php -l public_html/academics.php and inline JavaScript syntax checks for the Academics page and dev.html passed. Database-backed workflow and browser checks remain pending; no migration or configured database change was needed.
