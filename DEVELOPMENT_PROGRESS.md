@@ -732,3 +732,44 @@ At each phase end, update the status and record checks actually executed. Do not
 - **Data handling:** edits are audited and duplicate names are rejected by existing unique constraints. Removing a core item clears only school-to-core mapping references via the existing ON DELETE SET NULL relationships; school-local class/subject names and operational records remain. Removing a core class also removes its catalog subjects through the existing catalog cascade.
 - **Checklist:** System Admin and Sub Admin cases now include rename/remove, authorization, audit, duplicate, mapping, preservation, and async UI checks in public_html/dev.html.
 - **Verification:** php -l public_html/academics.php and inline JavaScript syntax checks for the Academics page and dev.html passed. Database-backed workflow and browser checks remain pending; no migration or configured database change was needed.
+
+## Current correction — learning-material catalog selectors
+
+- **Changed:** central material forms now search only system core classes and show core subjects for the selected class. School teaching staff now see school-edited class/subject pairs constrained to their active assignments and school memberships.
+- **Validation:** central note create/edit rejects pairs absent from the system catalog; staff note creation requires the pair to exist in the school catalog and an active assignment. Existing consumers continue to receive the established class/subject names.
+- **Checklist:** System Admin and Teacher QA cases in public_html/dev.html cover searchable role-specific catalogs and forged/stale values.
+- **Verification:** php -l public_html/notes.php passed; both inline JavaScript blocks passed 
+ode --check. Database-backed and authenticated browser checks remain pending; no schema or config change was made.
+
+
+## Current correction — Learning Material subtopic
+
+- **Changed:** Learning Materials now use `subtopic` in place of the note `title`, with the field placed after `topic` in the canonical `learning_notes` schema and authoring forms.
+- **Data preservation:** added `database/migrations/20261206_learning_note_subtopic.sql` to rename the existing column in place, retaining all current values as subtopics. The migration has not been applied to any configured database.
+- **Connections:** updated Learning Materials, AI question context, lesson resource selection, homework materials, holiday packages, and parent/pupil displays to read the renamed field. Other entities such as homework assignments and holiday package items retain their own `title` fields.
+- **Checklist:** added verification for the field order, preservation migration, and connected material consumers to `public_html/dev.html`.
+- **Verification:** source syntax and reference checks are in progress; database-backed migration and authenticated workflow checks remain pending. `config/config.php` was not changed.
+
+
+## Current correction — Learning Material visibility
+
+- **Teacher scope:** the Learning Materials page now shows a teacher only school notes matching their active assigned class/subject and central curriculum notes matching those assignments, including mapped core catalogs. The homework, holiday-package, and AI question note catalogs and generation endpoint use the same teacher scope.
+- **Leadership scope:** Headteachers and Directors see central curriculum notes plus school notes for schools where they have a membership; they do not receive another school's staff notes.
+- **Checklist:** updated Teacher, Head of School, and Director cases in `public_html/dev.html` for relevant-note visibility and school isolation.
+- **Verification:** PHP syntax checks passed for `notes.php`, `ai_questions.php`, `api/homework.php`, and `api/holiday_packages.php`. Authenticated role and database-backed scope checks remain pending.
+
+
+## Current correction — AI multiple-choice questions
+
+- **Generator:** added Multiple choice as an AI question section. Generation requires exactly four distinct choices and an answer that matches one choice; the printable/copyable question output labels the choices.
+- **Question bank:** AI import now stores those choices in the existing `question_bank.options_json` column and saves the item with `multiple_choice` type as a draft for normal review.
+- **Checklist:** updated the AI question workflow check in `public_html/dev.html` to cover option validation and import.
+- **Verification:** PHP syntax checks passed for the generator and question-bank API. Live AI generation and database-backed import remain unverified.
+
+
+## Current correction — AI question count selection
+
+- **Changed:** users can choose section counts totaling 1–100 questions, instead of the previous fixed 30-question cap. The displayed total, add-section behavior, input validation, generation endpoint, and question-bank draft import limit are aligned.
+- **Generation:** increased the provider request timeout to allow larger sets time to finish; generated and imported question counts must still match the requested section totals.
+- **Checklist:** added verification for user-selected totals, exact generation/import count, and rejection above 100 to `public_html/dev.html`.
+- **Verification:** PHP syntax checks passed for the AI generator and question-bank API. Large AI response latency and live imports remain unverified.

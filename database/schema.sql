@@ -196,10 +196,10 @@ CREATE TABLE IF NOT EXISTS teacher_assignments (
 CREATE TABLE IF NOT EXISTS learning_notes (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     note_type ENUM('central','teacher') NOT NULL,
-    title VARCHAR(180) NOT NULL,
     class_level VARCHAR(80) NOT NULL,
     subject VARCHAR(100) NULL,
     topic VARCHAR(180) NULL,
+    subtopic VARCHAR(180) NOT NULL,
     content MEDIUMTEXT NOT NULL,
     source VARCHAR(180) NULL,
     author_id BIGINT UNSIGNED NOT NULL,

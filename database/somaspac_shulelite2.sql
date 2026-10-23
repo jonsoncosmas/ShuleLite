@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 23, 2026 at 12:21 PM
+-- Generation Time: Oct 23, 2026 at 04:17 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -93,14 +93,6 @@ CREATE TABLE `audit_logs` (
   `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `audit_logs`
---
-
-INSERT INTO `audit_logs` (`id`, `actor_id`, `action`, `entity_type`, `entity_id`, `details`, `created_at`) VALUES
-(1, 3, 'create', 'school', 1, '{\"name\":\"Nyamata Academy\",\"director_id\":5,\"director_created\":false}', '2026-10-22 12:49:38'),
-(2, 1, 'create', 'school_subscription_discount', 1, '{\"school_id\":1,\"school\":\"Nyamata Academy\",\"before\":false,\"after\":{\"discount_percent\":20,\"reason\":\"\",\"active\":true}}', '2026-10-23 10:20:25');
 
 -- --------------------------------------------------------
 
@@ -596,10 +588,10 @@ CREATE TABLE `inventory_suppliers` (
 CREATE TABLE `learning_notes` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `note_type` enum('central','teacher') NOT NULL,
-  `title` varchar(180) NOT NULL,
   `class_level` varchar(80) NOT NULL,
   `subject` varchar(100) DEFAULT NULL,
   `topic` varchar(180) DEFAULT NULL,
+  `subtopic` varchar(180) NOT NULL,
   `content` mediumtext NOT NULL,
   `source` varchar(180) DEFAULT NULL,
   `author_id` bigint(20) UNSIGNED NOT NULL,
@@ -1014,13 +1006,6 @@ CREATE TABLE `schools` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `schools`
---
-
-INSERT INTO `schools` (`id`, `name`, `location`, `phone`, `status`, `created_by`, `created_at`) VALUES
-(1, 'Nyamata Academy', 'Mwanagati', '0712233445', 'active', 3, '2026-10-22 12:49:38');
-
 -- --------------------------------------------------------
 
 --
@@ -1208,14 +1193,6 @@ CREATE TABLE `school_memberships` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `school_memberships`
---
-
-INSERT INTO `school_memberships` (`id`, `school_id`, `user_id`, `scope`, `created_at`) VALUES
-(1, 1, 5, 'manager', '2026-10-22 12:49:38'),
-(2, 1, 3, 'manager', '2026-10-22 12:49:38');
-
 -- --------------------------------------------------------
 
 --
@@ -1318,13 +1295,6 @@ CREATE TABLE `school_subscription_discounts` (
   `updated_by` bigint(20) UNSIGNED NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `school_subscription_discounts`
---
-
-INSERT INTO `school_subscription_discounts` (`id`, `school_id`, `discount_percent`, `reason`, `active`, `updated_by`, `updated_at`) VALUES
-(1, 1, 20.00, NULL, 1, 1, '2026-10-23 10:20:25');
 
 -- --------------------------------------------------------
 
@@ -1514,7 +1484,8 @@ INSERT INTO `users` (`id`, `name`, `phone`, `email`, `username`, `password_hash`
 (2, 'Hanifa Rajabu', NULL, 'rajab@gmail.com', 'nipher', '$2y$10$L56ey.UlOktfI5giZEZ5f.X9YNf656xbXioNx8FdXJi5DDChNev4u', 0, 'sub_admin', 'active', '2026-10-21 06:40:24'),
 (3, 'Aylan Johnson Berege', NULL, NULL, 'admin', '$2y$10$3HPSWWFbu0f57T04kM3ezOkY8jRpXRjVcx7RZCMUDTsbuLvv69do6', 0, 'admin', 'active', '2026-10-21 06:41:35'),
 (5, 'Sikubwabo Ngendabanka', '0788798558', NULL, 'ngenda', '$2y$10$WkrWvMstGDZd1jnDDiQAxOKPrq4zS.K97xnqls508LrZoDc0BJdlq', 0, 'director', 'active', '2026-10-21 09:03:15'),
-(6, 'Renard Gurusi', NULL, NULL, 'gurusi', '$2y$10$gjx9tfLKstNmkQnnhtdQdu2P17gBn8trDK7xBiHQD7yEct.D6/fKK', 0, 'headteacher', 'active', '2026-10-21 11:41:24');
+(7, 'Renard Gurusi', NULL, NULL, 'gurusi', '$2y$10$eSsr.H7aTlCavXZeCW04U.mSmc8wy8nu.XMD4EbKQODypc8ntZaMi', 0, 'headteacher', 'active', '2026-10-23 14:01:59'),
+(8, 'Gerard Joseph', NULL, NULL, 'gerard', '$2y$10$2HO1QvKOYUuVFY9VEOgd5eoZFrfnoslpvUGDr78oDQ/ikKodsdH7S', 0, 'teacher', 'active', '2026-10-23 14:03:15');
 
 -- --------------------------------------------------------
 
@@ -2320,7 +2291,7 @@ ALTER TABLE `ai_question_import_batches`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `class_timetable_entries`
@@ -2596,7 +2567,7 @@ ALTER TABLE `scheme_topics`
 -- AUTO_INCREMENT for table `schools`
 --
 ALTER TABLE `schools`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `school_announcements`
@@ -2656,7 +2627,7 @@ ALTER TABLE `school_grading_scales`
 -- AUTO_INCREMENT for table `school_memberships`
 --
 ALTER TABLE `school_memberships`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `school_setup_permissions`
@@ -2686,7 +2657,7 @@ ALTER TABLE `school_subjects`
 -- AUTO_INCREMENT for table `school_subscription_discounts`
 --
 ALTER TABLE `school_subscription_discounts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `sms_delivery_logs`
@@ -2740,7 +2711,7 @@ ALTER TABLE `teaching_records`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `vehicles`
